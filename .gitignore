@@ -1,0 +1,31 @@
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sw?
+
+
+# Visual Studio cache/options directory
+.vs/
+bin/
+obj/
+
+# ASP.NET Core
+*.csproj.user
+
+# Logs
+*.log
+
+# NuGet
+*.nupkg
+*.snupkg
+
+# Packages
+packages/
+!packages/build/
+
+.github
