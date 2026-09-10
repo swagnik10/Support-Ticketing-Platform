@@ -3,29 +3,27 @@ using FluentNHibernate.Mapping;
 
 namespace Backend.Mappings;
 
-public class OrganizationMap : ClassMap<Organization>
+public class OrganizationUserMap : ClassMap<OrganizationUser>
 {
-    public OrganizationMap()
+    public OrganizationUserMap()
     {
-        Table("organizations");
+        Table("organization_users");
         Schema("helpdesk");
 
-        Id(x => x.OrganizationId)
-            .Column("organization_id")
-            .GeneratedBy.Guid();
+        CompositeId()
+            .KeyProperty(x => x.OrganizationId, "organization_id")
+            .KeyProperty(x => x.UserId, "user_id");
 
-        Map(x => x.Name)
-            .Column("name")
-            .Length(200)
-            .Not.Nullable();
-
-        Map(x => x.Slug)
-            .Column("slug")
-            .Length(100)
+        Map(x => x.RoleId)
+            .Column("role_id")
             .Not.Nullable();
 
         Map(x => x.IsActive)
             .Column("is_active")
+            .Not.Nullable();
+
+        Map(x => x.JoinedAt)
+            .Column("joined_at")
             .Not.Nullable();
 
         Map(x => x.CreatedAt)

@@ -3,25 +3,28 @@ using FluentNHibernate.Mapping;
 
 namespace Backend.Mappings;
 
-public class OrganizationMap : ClassMap<Organization>
+public class TicketPriorityMap : ClassMap<TicketPriority>
 {
-    public OrganizationMap()
+    public TicketPriorityMap()
     {
-        Table("organizations");
+        Table("ticket_priorities");
         Schema("helpdesk");
 
-        Id(x => x.OrganizationId)
-            .Column("organization_id")
+        Id(x => x.PriorityId)
+            .Column("priority_id")
             .GeneratedBy.Guid();
+
+        Map(x => x.OrganizationId)
+            .Column("organization_id")
+            .Not.Nullable();
 
         Map(x => x.Name)
             .Column("name")
-            .Length(200)
+            .Length(50)
             .Not.Nullable();
 
-        Map(x => x.Slug)
-            .Column("slug")
-            .Length(100)
+        Map(x => x.PriorityLevel)
+            .Column("priority_level")
             .Not.Nullable();
 
         Map(x => x.IsActive)
@@ -35,9 +38,5 @@ public class OrganizationMap : ClassMap<Organization>
         Map(x => x.UpdatedAt)
             .Column("updated_at")
             .Not.Nullable();
-
-        Map(x => x.DeletedAt)
-            .Column("deleted_at")
-            .Nullable();
     }
 }
