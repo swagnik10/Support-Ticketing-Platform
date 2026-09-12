@@ -2,7 +2,7 @@
 using Backend.Domain;
 using Backend.DTO.Organization;
 using MediatR;
-using static Backend.CommandAndQuery.Orgnanization;
+using Backend.CommandAndQuery;
 
 namespace Backend.Handler.Organizations;
 

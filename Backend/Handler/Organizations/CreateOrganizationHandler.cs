@@ -1,8 +1,9 @@
-﻿using Backend.DbConnection;
+﻿using Backend.CommandAndQuery;
+using Backend.DbConnection;
 using Backend.Domain;
 using Backend.DTO.Organization;
 using MediatR;
-using static Backend.CommandAndQuery.Orgnanization;
+
 
 namespace Backend.Handler.Organizations;
 

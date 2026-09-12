@@ -1,19 +1,18 @@
 ﻿using Backend.CommandAndQuery;
-using Backend.DTO.Organization;
+using Backend.DTO.User;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-
 
 namespace Backend.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class OrganizationController : ControllerBase
+public class UserController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ILogger<OrganizationController> _logger;
+    private readonly ILogger<UserController> _logger;
 
-    public OrganizationController(IMediator mediator, ILogger<OrganizationController> logger)
+    public UserController(IMediator mediator, ILogger<UserController> logger)
     {
         _mediator = mediator;
         _logger = logger;
@@ -21,14 +20,14 @@ public class OrganizationController : ControllerBase
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] CreateOrganizationRequest request,
+        [FromBody] CreateUserRequest request,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Received request to create organization with name {Name} and slug {Slug}",
-            request.Name,
-            request.Slug);
-        var command = new CreateOrganizationCommand(request);
+            "Creating user with email {Email}",
+            request.Email);
+
+        var command = new CreateUserCommand(request);
 
         var response = await _mediator.Send(
             command,
@@ -36,10 +35,9 @@ public class OrganizationController : ControllerBase
 
         return CreatedAtAction(
             nameof(GetById),
-            new { id = response.OrganizationId },
+            new { id = response.UserId },
             response);
     }
-
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(
@@ -47,10 +45,10 @@ public class OrganizationController : ControllerBase
         CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Received request to get organization with id {Id}",
+            "Getting user with id {UserId}",
             id);
 
-        var query = new GetOrganizationQuery(id);
+        var query = new GetUserQuery(id);
 
         var response = await _mediator.Send(
             query,
@@ -58,13 +56,14 @@ public class OrganizationController : ControllerBase
 
         return Ok(response);
     }
-
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
         CancellationToken cancellationToken)
     {
-        var query = new GetOrganizationsQuery();
+        _logger.LogInformation("Getting all users");
+
+        var query = new GetUsersQuery();
 
         var response = await _mediator.Send(
             query,
@@ -73,18 +72,17 @@ public class OrganizationController : ControllerBase
         return Ok(response);
     }
 
-
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
         Guid id,
-        [FromBody] UpdateOrganizationRequest request,
+        [FromBody] UpdateUserRequest request,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Received request to update organization with id {Id}",
+            "Updating user with id {UserId}",
             id);
 
-        var command = new UpdateOrganizationCommand(
+        var command = new UpdateUserCommand(
             id,
             request);
 
@@ -95,18 +93,18 @@ public class OrganizationController : ControllerBase
         return Ok(response);
     }
 
-
     [HttpPatch("{id:guid}/status")]
     public async Task<IActionResult> UpdateStatus(
         Guid id,
-        [FromBody] UpdateOrganizationStatusRequest request,
+        [FromBody] UpdateUserStatusRequest request,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Received request to update status of organization with id {Id}",
-            id);
+            "Updating status of user with id {UserId} to {IsActive}",
+            id,
+            request.IsActive);
 
-        var command = new UpdateOrganizationStatusCommand(
+        var command = new UpdateUserStatusCommand(
             id,
             request);
 
