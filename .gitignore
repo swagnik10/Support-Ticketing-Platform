@@ -29,3 +29,4 @@ packages/
 !packages/build/
 
 .github
+.appsettings.Development.json

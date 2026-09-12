@@ -1,4 +1,5 @@
 using Backend.DbConnection;
+using Backend.Middlewares;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,12 @@ builder.Services.AddScoped<NHibernate.ISession>(sp =>
     return NHibernateHelper.SessionFactory.OpenSession();
 });
 
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(
+        typeof(Program).Assembly);
+});
+
 var app = builder.Build();
 
 Log.Information("Application build scucessfully at {Time}", DateTime.Now);
@@ -39,6 +46,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 
 }
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
