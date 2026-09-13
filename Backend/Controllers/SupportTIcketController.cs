@@ -1,47 +1,108 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Backend.Domain;
-using Backend.DbConnection; 
+﻿using Backend.CommandAndQuery;
+using Backend.DTO.Ticket;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/tickets")]
 public class SupportTicketController : ControllerBase
 {
+    private readonly IMediator _mediator;
     private readonly ILogger<SupportTicketController> _logger;
-    private readonly NHibernate.ISession _session;
-    private readonly IUnitOfWorkFactory _uowFactory;
 
-    public SupportTicketController(ILogger<SupportTicketController> logger, NHibernate.ISession session, IUnitOfWorkFactory uowFactory)
+    public SupportTicketController(
+        IMediator mediator,
+        ILogger<SupportTicketController> logger)
     {
+        _mediator = mediator;
         _logger = logger;
-        _session = session;
-        _uowFactory = uowFactory;
     }
 
-    [HttpGet("execute")]
-    public async Task<IActionResult> ExecutePlan()
+    [HttpPost]
+    public async Task<ActionResult<TicketResponse>> CreateTicket(
+        [FromBody] CreateTicketRequest request,
+        CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Executing plan...");
+        _logger.LogInformation(
+            "Creating ticket for organization {OrganizationId}",
+            request.OrganizationId);
 
-        List<Organization> organizations = [.. _session.Query<Organization>()];
+        var result = await _mediator.Send(
+            new CreateTicketCommand(request),
+            cancellationToken);
 
-        Organization org = new Organization
-        {
-            Name = "New Organization",
-            Slug = "new-organization"
-        };
+        return StatusCode(StatusCodes.Status201Created, result);
+    }
 
-        using var uow = _uowFactory.Create();
+    [HttpGet]
+    public async Task<ActionResult<IList<TicketResponse>>> GetTickets(
+        [FromQuery] Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(
+            "Getting tickets for organization {OrganizationId}",
+            organizationId);
 
-        uow.BeginTransaction();
+        var result = await _mediator.Send(
+            new GetTicketsQuery(organizationId),
+            cancellationToken);
 
-        await _session.SaveAsync(org);
-            
-        // auto generated date and bool have problems--have to check
-        await uow.CommitAsync();
+        return Ok(result);
+    }
 
+    [HttpGet("{ticketId:guid}")]
+    public async Task<ActionResult<TicketResponse>> GetTicket(
+        Guid ticketId,
+        [FromQuery] Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(
+            "Getting ticket {TicketId} for organization {OrganizationId}",
+            ticketId,
+            organizationId);
 
-        return Ok(organizations);
+        var result = await _mediator.Send(
+            new GetTicketQuery(organizationId, ticketId),
+            cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpPut("{ticketId:guid}")]
+    public async Task<ActionResult<TicketResponse>> UpdateTicket(
+        Guid ticketId,
+        [FromBody] UpdateTicketRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(
+            "Updating ticket {TicketId} for organization {OrganizationId}",
+            ticketId,
+            request.OrganizationId);
+
+        var result = await _mediator.Send(
+            new UpdateTicketCommand(ticketId, request),
+            cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpPatch("{ticketId:guid}/status")]
+    public async Task<ActionResult<TicketResponse>> UpdateTicketStatus(
+        Guid ticketId,
+        [FromBody] UpdateTicketStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(
+            "Changing status of ticket {TicketId} to {StatusId}",
+            ticketId,
+            request.StatusId);
+
+        var result = await _mediator.Send(
+            new UpdateTicketStatusCommand(ticketId, request),
+            cancellationToken);
+
+        return Ok(result);
     }
 }
