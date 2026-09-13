@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/organizations")]
 public class OrganizationController : ControllerBase
 {
     private readonly IMediator _mediator;
