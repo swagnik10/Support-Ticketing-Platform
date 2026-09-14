@@ -83,7 +83,7 @@ public class CreateUserHandler
             UserId = user.UserId,
             Email = user.Email,
             FirstName = user.FirstName,
-            LastName = user.LastName,
+            LastName = user.LastName ?? "",
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
