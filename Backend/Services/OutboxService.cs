@@ -50,4 +50,42 @@ public class OutboxService
 
         await _session.SaveAsync(outboxMessage, cancellationToken);
     }
+
+    public async Task<List<OutboxMessage>> ClaimMessagesAsync(
+    int batchSize,
+    CancellationToken cancellationToken)
+    {
+        var staleLockTime = DateTime.UtcNow.AddMinutes(-5);
+
+        var sql = """
+            SELECT *
+            FROM helpdesk.outbox_messages
+            WHERE published_at IS NULL
+              AND (
+                    locked_at IS NULL
+                    OR locked_at < :staleLockTime
+                  )
+            ORDER BY created_at
+            FOR UPDATE SKIP LOCKED
+            LIMIT :batchSize
+            """;
+
+        var messages = await _session
+            .CreateSQLQuery(sql)
+            .AddEntity(typeof(OutboxMessage))
+            .SetParameter("staleLockTime", staleLockTime)
+            .SetParameter("batchSize", batchSize)
+            .ListAsync<OutboxMessage>(cancellationToken);
+
+        var lockedAt = DateTime.UtcNow;
+
+        foreach (var message in messages)
+        {
+            message.LockedAt = lockedAt;
+        }
+
+        await _session.FlushAsync(cancellationToken);
+
+        return messages.ToList();
+    }
 }

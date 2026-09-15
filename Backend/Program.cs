@@ -1,4 +1,6 @@
 using Backend.DbConnection;
+using Backend.DTO.Rabbitmq;
+using Backend.Infrastructure;
 using Backend.Middlewares;
 using Backend.Services;
 using Serilog;
@@ -36,6 +38,12 @@ builder.Services.AddMediatR(cfg =>
 });
 
 builder.Services.AddScoped<OutboxService>();
+
+builder.Services.Configure<RabbitMqOptions>(
+    builder.Configuration.GetSection("RabbitMQ"));
+
+builder.Services.AddScoped<RabbitMqPublisher>();
+builder.Services.AddHostedService<OutboxRelay>();
 
 var app = builder.Build();
 
