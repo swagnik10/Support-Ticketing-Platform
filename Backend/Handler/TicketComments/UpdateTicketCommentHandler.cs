@@ -2,6 +2,7 @@
 using Backend.DbConnection;
 using Backend.Domain;
 using Backend.DTO.TicketComment;
+using Backend.Services;
 using MediatR;
 using NHibernate.Linq;
 
@@ -12,13 +13,16 @@ public class UpdateTicketCommentHandler
 {
     private readonly IUnitOfWorkFactory _unitOfWorkFactory;
     private readonly ILogger<UpdateTicketCommentHandler> _logger;
+    private readonly OutboxService _outboxService;
 
     public UpdateTicketCommentHandler(
         IUnitOfWorkFactory unitOfWorkFactory,
-        ILogger<UpdateTicketCommentHandler> logger)
+        ILogger<UpdateTicketCommentHandler> logger,
+        OutboxService outboxService)
     {
         _unitOfWorkFactory = unitOfWorkFactory;
         _logger = logger;
+        _outboxService = outboxService;
     }
 
     public async Task<TicketCommentResponse> Handle(
@@ -69,6 +73,8 @@ public class UpdateTicketCommentHandler
             comment.IsInternal = request.Request.IsInternal;
             comment.UpdatedAt = now;
 
+            var correlationId = Guid.NewGuid();
+
             var ticketEvent = new TicketEvent
             {
                 EventId = Guid.NewGuid(),
@@ -79,13 +85,15 @@ public class UpdateTicketCommentHandler
                 OldValue = oldValue,
                 NewValue = comment.CommentText,
                 Metadata = null,
-                CorrelationId = null,
+                CorrelationId = correlationId,
                 OccurredAt = now
             };
 
             await unitOfWork.Session.SaveAsync(
                 ticketEvent,
                 cancellationToken);
+
+            await _outboxService.AddAsync(ticketEvent, cancellationToken);
 
             await unitOfWork.Session.FlushAsync(cancellationToken);
 

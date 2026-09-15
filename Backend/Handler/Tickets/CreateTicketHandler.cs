@@ -1,10 +1,11 @@
-﻿using System.Text.Json;
-using Backend.CommandAndQuery;
+﻿using Backend.CommandAndQuery;
 using Backend.DbConnection;
 using Backend.Domain;
 using Backend.DTO.Ticket;
+using Backend.Services;
 using MediatR;
 using NHibernate.Linq;
+using System.Text.Json;
 
 namespace Backend.Handler.Tickets;
 
@@ -13,13 +14,16 @@ public class CreateTicketHandler
 {
     private readonly IUnitOfWorkFactory _unitOfWorkFactory;
     private readonly ILogger<CreateTicketHandler> _logger;
+    private readonly OutboxService _outboxService;
 
     public CreateTicketHandler(
         IUnitOfWorkFactory unitOfWorkFactory,
-        ILogger<CreateTicketHandler> logger)
+        ILogger<CreateTicketHandler> logger,
+        OutboxService outboxService)
     {
         _unitOfWorkFactory = unitOfWorkFactory;
         _logger = logger;
+        _outboxService = outboxService;
     }
 
     public async Task<TicketResponse> Handle(
@@ -164,6 +168,8 @@ public class CreateTicketHandler
             };
 
             await session.SaveAsync(ticketEvent, cancellationToken);
+
+            await _outboxService.AddAsync(ticketEvent, cancellationToken);
 
             await unitOfWork.CommitAsync();
 

@@ -1,5 +1,6 @@
 using Backend.DbConnection;
 using Backend.Middlewares;
+using Backend.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,8 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(
         typeof(Program).Assembly);
 });
+
+builder.Services.AddScoped<OutboxService>();
 
 var app = builder.Build();
 

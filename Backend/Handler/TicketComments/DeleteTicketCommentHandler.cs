@@ -1,6 +1,7 @@
 ﻿using Backend.CommandAndQuery;
 using Backend.DbConnection;
 using Backend.Domain;
+using Backend.Services;
 using MediatR;
 using NHibernate.Linq;
 
@@ -11,13 +12,16 @@ public class DeleteTicketCommentHandler
 {
     private readonly IUnitOfWorkFactory _unitOfWorkFactory;
     private readonly ILogger<DeleteTicketCommentHandler> _logger;
+    private readonly OutboxService _outboxService;
 
     public DeleteTicketCommentHandler(
         IUnitOfWorkFactory unitOfWorkFactory,
-        ILogger<DeleteTicketCommentHandler> logger)
+        ILogger<DeleteTicketCommentHandler> logger,
+        OutboxService outboxService)
     {
         _unitOfWorkFactory = unitOfWorkFactory;
         _logger = logger;
+        _outboxService = outboxService;
     }
 
     public async Task<bool> Handle(
@@ -61,6 +65,8 @@ public class DeleteTicketCommentHandler
             comment.DeletedAt = now;
             comment.UpdatedAt = now;
 
+            var correlationId = Guid.NewGuid();
+
             var ticketEvent = new TicketEvent
             {
                 EventId = Guid.NewGuid(),
@@ -71,13 +77,15 @@ public class DeleteTicketCommentHandler
                 OldValue = comment.CommentText,
                 NewValue = null,
                 Metadata = null,
-                CorrelationId = null,
+                CorrelationId = correlationId,
                 OccurredAt = now
             };
 
             await unitOfWork.Session.SaveAsync(
                 ticketEvent,
                 cancellationToken);
+
+            await _outboxService.AddAsync(ticketEvent, cancellationToken);
 
             await unitOfWork.Session.FlushAsync(cancellationToken);
 

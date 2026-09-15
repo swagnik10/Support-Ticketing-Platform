@@ -1,10 +1,11 @@
-﻿using System.Text.Json;
-using Backend.CommandAndQuery;
+﻿using Backend.CommandAndQuery;
 using Backend.DbConnection;
 using Backend.Domain;
 using Backend.DTO.TicketAssignment;
+using Backend.Services;
 using MediatR;
 using NHibernate.Linq;
+using System.Text.Json;
 
 namespace Backend.Handler.TicketAssignments;
 
@@ -13,13 +14,16 @@ public class ReassignTicketHandler
 {
     private readonly IUnitOfWorkFactory _unitOfWorkFactory;
     private readonly ILogger<ReassignTicketHandler> _logger;
+    private readonly OutboxService _outboxService;
 
     public ReassignTicketHandler(
         IUnitOfWorkFactory unitOfWorkFactory,
-        ILogger<ReassignTicketHandler> logger)
+        ILogger<ReassignTicketHandler> logger,
+        OutboxService outboxService)
     {
         _unitOfWorkFactory = unitOfWorkFactory;
         _logger = logger;
+        _outboxService = outboxService;
     }
 
     public async Task<TicketAssignmentResponse> Handle(
@@ -163,6 +167,8 @@ public class ReassignTicketHandler
             await unitOfWork.Session.SaveAsync(
                 ticketEvent,
                 cancellationToken);
+
+            await _outboxService.AddAsync(ticketEvent, cancellationToken);
 
             await unitOfWork.Session.FlushAsync(
                 cancellationToken);
